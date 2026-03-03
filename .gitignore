@@ -1,0 +1,9 @@
+context_runs/
+data/
+node_modules/
+.env
+package-lock.json
+uv.lock
+__pycache__/
+.pytest_cache/
+.venv/

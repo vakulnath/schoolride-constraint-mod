@@ -1,0 +1,48 @@
+# Problem Contract: School Bus Route Replanning
+# Defines the problem constraints and objectives.
+# Any code edit must satisfy all hard constraints and not break soft objectives.
+
+## Existing Constraints (hard — must NOT be violated)
+
+Any new constraint you add must not break these existing guarantees.
+
+- C1 Coverage: every unvisited pickup from a broken bus must be reassigned to
+  exactly one working bus. If no feasible assignment exists, replanning fails.
+
+- C2 Uniqueness: each pickup stop appears on at most one bus route. A pickup
+  cannot be assigned to multiple buses.
+
+- C3 Capacity: the number of onboard passengers must never exceed the bus
+  capacity at any point along the route. If a pickup would cause the bus to
+  exceed capacity, that insertion is infeasible.
+
+- C4 No-mix: between consecutive school dropoffs in a route, all pickups must
+  be destined for the same school. Students going to different schools cannot
+  share a route segment.
+
+- C5 Precedence: every pickup must appear before at least one of its allowed
+  dropoffs in the route. A bus cannot drop off students before picking them up.
+
+- C6 Early-arrival: a bus must not arrive at a school earlier than
+  (planned_arrival - early_arrival_window). The default window is 30 minutes.
+
+## Objectives (soft — minimized by cost function)
+
+The system picks the assignment that minimizes total insertion cost.
+These are penalties, not hard rejections.
+
+- O1 Pickup delay: lateness at pickup stops caused by the insertion.
+  Only counts delays introduced by the new insertion, not pre-existing delays.
+  Weight: delay_weight (default 1.0).
+
+- O2 School delay: lateness at school/dropoff stops caused by the insertion.
+  Weighted 50x heavier than pickup delay to prioritize on-time school arrival.
+  Weight: school_delay_weight (default 50.0).
+
+- O3 Route change / dispatch: one-time penalty when a bus route is first
+  modified. Separate weights for activating an idle bus vs modifying a
+  working bus route. Both default to 0.
+
+- O4 Riding time: penalty for students riding longer than the limit
+  (default 75 minutes). Only penalizes excess over the limit, not total
+  riding time. Weight: riding_time_weight (default 100.0).

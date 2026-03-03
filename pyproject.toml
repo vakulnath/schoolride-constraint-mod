@@ -1,0 +1,17 @@
+[project]
+name = "constraint-modification"
+version = "0.1.0"
+description = "LLM-powered constraint modification system for school bus routing"
+requires-python = ">=3.10"
+dependencies = [
+    "school-solvers @ file:///Users/vakulnath/constraint-solver/constraint_modification/schoolride-solvers",
+    "school-simulator @ file:///Users/vakulnath/constraint-solver/constraint_modification/schoolride-simulator",
+    "hexaly>=14.5",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+extra-index-url = ["https://pip.hexaly.com"]

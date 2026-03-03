@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "claude-context": "github:vakulnath/claude-context#main",
+    "@modelcontextprotocol/server-filesystem": "latest"
+  }
+}

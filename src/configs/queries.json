@@ -1,0 +1,94 @@
+{
+  "llm": "claude",
+  "edit_mode": "full",
+  "temp_root": "tmp_code_mod",
+  "mapping_path": "query_modification_mapping.md",
+  "constraints_path": "configs/constraints.txt",
+  "files": [
+    "src/school_bus_routing/policy/insert_heuristic.py",
+    "src/school_bus_routing/policy/insertion_policy.py"
+  ],
+  "queries": [
+    {
+      "query_id": 1,
+      "question": "What if stop 20006 must be served by bus 0?",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 0
+      }
+    },
+    {
+      "query_id": 2,
+      "question": "What if stop 20002 must not be served by bus 2?",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 2
+      }
+    },
+    {
+      "query_id": 7,
+      "question": "What if stop 20006 must be served before stop 20002?",
+      "entities": {
+        "stop_id_1": 20006,
+        "stop_id_2": 20002
+      }
+    },
+    {
+      "query_id": 3,
+      "question": "What if bus 2 capacity is reduced to 12?",
+      "entities": {
+        "bus_id": 2,
+        "capacity": 12
+      }
+    },
+    {
+      "query_id": 5,
+      "question": "What if stops 20002 and 20006 must be on the same bus?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20006
+      }
+    },
+    {
+      "query_id": 6,
+      "question": "What if stops 20002 and 20006 must not be on the same bus?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20006
+      }
+    },
+    {
+      "query_id": 8,
+      "question": "What if bus 0 capacity is reduced to 45?",
+      "entities": {
+        "bus_id": 0,
+        "capacity": 45
+      }
+    },
+    {
+      "query_id": 9,
+      "question": "What if bus 2 can serve at most 1 stop?",
+      "entities": {
+        "bus_id": 2,
+        "max_stops": 1
+      }
+    },
+    {
+      "query_id": 10,
+      "question": "What if stop 20006 must not be served by bus 0?",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 0
+      }
+    },
+    {
+      "query_id": 11,
+      "question": "What if stop 20002 must be served by bus 2?",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 2
+      }
+    }
+  ],
+  "max_runtime_retry": 5
+}
