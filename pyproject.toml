@@ -6,7 +6,12 @@ requires-python = ">=3.10"
 dependencies = [
     "school-solvers @ file:///Users/vakulnath/constraint-solver/constraint_modification/schoolride-solvers",
     "school-simulator @ file:///Users/vakulnath/constraint-solver/constraint_modification/schoolride-simulator",
+    "optl @ file:///Users/vakulnath/constraint-solver/constraint_modification/optl",
     "hexaly>=14.5",
+    "python-dotenv",
+    "dotenv>=0.9.9",
+    "google-adk>=1.27.2",
+    "nest-asyncio>=1.6.0",
 ]
 
 [build-system]
@@ -15,3 +20,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.uv]
 extra-index-url = ["https://pip.hexaly.com"]
+
+[tool.pyright]
+reportMissingImports = "warning"

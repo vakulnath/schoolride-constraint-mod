@@ -16,16 +16,11 @@ Usage:
 import argparse
 import os
 import shutil
-import sys
 import time
 from typing import Dict, List, Optional
 
-from src.clients.mcp_client import get_context_client, extract_text
-from src.configs.config_parser import (
-    SOLVERS_POLICY_ROOT, INDEX_FILES, INDEX_WORKSPACE,
-    HEXALY_INDEX_FILES, HEXALY_INDEX_WORKSPACE,
-    POLICY_DIR, LOGS_DIR,
-)
+from src.mcp.context import get_context_client, extract_text
+from src.configs import config_parser as cfg
 from src.utils.utils import load_env_file
 
 # ── Paths ────────────────────────────────────────────────────────────────
@@ -76,9 +71,18 @@ def _index_workspace(
         env = _load_env()
 
     print(f"\nCopying {label} files to {workspace_path}")
-    _copy_files(file_list, SOLVERS_POLICY_ROOT, workspace_path)
+    if clear:
+        # Remove stale .py files not in the current file_list
+        dst = str(workspace_path)
+        if os.path.isdir(dst):
+            current = set(file_list)
+            for f in os.listdir(dst):
+                if f.endswith(".py") and f not in current:
+                    os.remove(os.path.join(dst, f))
+                    print(f"  Removed stale file: {f}")
+    _copy_files(file_list, cfg.SOLVERS_POLICY_ROOT, workspace_path)
 
-    print(f"\nConnecting to Claude Context MCP server...")
+    print("\nConnecting to Claude Context MCP server...")
     client = get_context_client(env)
 
     try:
@@ -143,7 +147,7 @@ def index_codebase(
     env: Optional[Dict[str, str]] = None,
 ) -> str:
     """Index the insertion workspace (backward-compatible)."""
-    return _index_workspace(INDEX_WORKSPACE, INDEX_FILES, "insertion", clear, env)
+    return _index_workspace(cfg.INDEX_WORKSPACE, cfg.INDEX_FILES, "insertion", clear, env)
 
 
 def index_hexaly(
@@ -151,7 +155,7 @@ def index_hexaly(
     env: Optional[Dict[str, str]] = None,
 ) -> str:
     """Index the Hexaly workspace."""
-    return _index_workspace(HEXALY_INDEX_WORKSPACE, HEXALY_INDEX_FILES, "hexaly", clear, env)
+    return _index_workspace(cfg.HEXALY_INDEX_WORKSPACE, cfg.HEXALY_INDEX_FILES, "hexaly", clear, env)
 
 
 def get_indexing_status(
@@ -161,7 +165,7 @@ def get_indexing_status(
     """Check the indexing status of a workspace."""
     if env is None:
         env = _load_env()
-    ws = str(workspace or INDEX_WORKSPACE)
+    ws = str(workspace or cfg.INDEX_WORKSPACE)
     client = get_context_client(env)
     try:
         result = client.call(
@@ -201,10 +205,10 @@ def main():
     if args.status:
         if args.workspace in ("insertion", "all"):
             print("=== Insertion workspace ===")
-            print(get_indexing_status(INDEX_WORKSPACE))
+            print(get_indexing_status(cfg.INDEX_WORKSPACE))
         if args.workspace in ("hexaly", "all"):
             print("=== Hexaly workspace ===")
-            print(get_indexing_status(HEXALY_INDEX_WORKSPACE))
+            print(get_indexing_status(cfg.HEXALY_INDEX_WORKSPACE))
         return
 
     if args.workspace in ("insertion", "all"):

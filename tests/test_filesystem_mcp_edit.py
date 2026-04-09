@@ -17,10 +17,10 @@ import sys
 import shutil
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-from clients.mcp_client import MCPClient
+from mcp.context import MCPClient
 
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SOURCE_FILE = os.path.join(_BASE_DIR, "context_runs", "index_workspace", "insert_heuristic.py")
+SOURCE_FILE = os.path.join(_BASE_DIR, "context_runs", "index_workspace", "insertion", "insert_heuristic.py")
 TEST_DIR = os.path.join(_BASE_DIR, "test_temp")
 
 

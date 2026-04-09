@@ -16,7 +16,7 @@ import sys
 # Add the src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
 
-from clients.mcp_client import mcp_search, extract_text, get_context_client
+from mcp.context import mcp_search, extract_text, get_context_client
 from utils.utils import dedupe_results, load_env_file
 
 
@@ -27,8 +27,13 @@ def test_callsto_metadata():
     env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
     env = {**os.environ, **load_env_file(env_path)}
 
-    # Indexed workspace path (created by index_client.py)
-    repo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "context_runs", "index_workspace")
+    # Indexed insertion workspace path (created by index_client.py)
+    repo_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        "context_runs",
+        "index_workspace",
+        "insertion",
+    )
 
     # Test queries - these should find functions that CALL other functions
     test_queries = [
@@ -107,8 +112,13 @@ def test_raw_mcp_response():
     env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
     env = {**os.environ, **load_env_file(env_path)}
 
-    # Indexed workspace path (created by index_client.py)
-    repo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "context_runs", "index_workspace")
+    # Indexed insertion workspace path (created by index_client.py)
+    repo_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        "context_runs",
+        "index_workspace",
+        "insertion",
+    )
 
     print("\n" + "=" * 80)
     print("RAW MCP CLIENT RESPONSE (before extract_text)")

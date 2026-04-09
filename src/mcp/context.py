@@ -13,6 +13,7 @@ import os
 import subprocess
 import threading
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -78,7 +79,8 @@ class MCPClient:
         """Terminate the MCP server subprocess."""
         if self._proc and self._proc.poll() is None:
             try:
-                self._proc.stdin.close()
+                if self._proc.stdin is not None:
+                    self._proc.stdin.close()
             except Exception:
                 pass
             try:
@@ -102,6 +104,7 @@ class MCPClient:
 
     def _write_message(self, msg: dict):
         """Write a JSON-RPC message to the server's stdin."""
+        assert self._proc is not None and self._proc.stdin is not None
         body = json.dumps(msg)
         # MCP uses newline-delimited JSON (no Content-Length header)
         data = body + "\n"
@@ -115,17 +118,19 @@ class MCPClient:
         Handles the case where the server might write log lines to stderr
         or non-JSON lines to stdout (which we skip).
         """
+        assert self._proc is not None and self._proc.stdout is not None
         deadline = time.time() + timeout_s
         while time.time() < deadline:
             if self._proc.poll() is not None:
                 stderr_out = ""
                 try:
-                    stderr_out = self._proc.stderr.read().decode("utf-8", errors="replace")
+                    if self._proc.stderr is not None:
+                        stderr_out = self._proc.stderr.read().decode("utf-8", errors="replace")
                 except Exception:
                     pass
                 raise RuntimeError(
                     f"MCP server process exited with code {self._proc.returncode}. "
-                    f"stderr: {stderr_out[:2000]}"
+                    f"stderr: {stderr_out[:20000]}"
                 )
 
             line = self._proc.stdout.readline()
@@ -197,11 +202,18 @@ class MCPClient:
 # Claude Context MCP helpers
 # ====================================================================== #
 
-# Path to the Claude Context MCP server from node_modules (relative to project root)
-_CONTEXT_MCP_DIST = "node_modules/claude-context/packages/mcp/dist/index.js"
+# Project root: constraint_modification/
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-# Path to the Filesystem MCP server from node_modules (relative to project root)
-_FS_MCP_DIST = "node_modules/@modelcontextprotocol/server-filesystem/dist/index.js"
+# Absolute path to Claude Context MCP server from node_modules
+_CONTEXT_MCP_DIST = str(
+    _PROJECT_ROOT / "node_modules" / "claude-context" / "packages" / "mcp" / "dist" / "index.js"
+)
+
+# Absolute path to Filesystem MCP server from node_modules
+_FS_MCP_DIST = str(
+    _PROJECT_ROOT / "node_modules" / "@modelcontextprotocol" / "server-filesystem" / "dist" / "index.js"
+)
 
 
 def _build_context_env(env: Optional[Dict[str, str]] = None) -> Dict[str, str]:
@@ -228,8 +240,8 @@ def get_context_client(env: Optional[Dict[str, str]] = None) -> MCPClient:
     """
     Create an MCPClient connected to the local Claude Context MCP server.
 
-    The server is spawned from the locally-built dist at:
-      claude-context/packages/mcp/dist/index.js
+    The server is spawned from:
+      <project_root>/node_modules/claude-context/packages/mcp/dist/index.js
     """
     if not os.path.isfile(_CONTEXT_MCP_DIST):
         raise FileNotFoundError(
@@ -247,8 +259,8 @@ def get_filesystem_client(
     """
     Create an MCPClient connected to the Filesystem MCP server.
 
-    The server is spawned from the locally-built dist at:
-      servers/src/filesystem/dist/index.js
+    The server is spawned from:
+      <project_root>/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js
     """
     if not os.path.isfile(_FS_MCP_DIST):
         raise FileNotFoundError(

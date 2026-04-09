@@ -1,260 +1,82 @@
 """
-Judgment Agent (JA) — validates a proposed edit before execution.
+Verifier Agent (JA) — validates a proposed edit before execution.
 
-Tool-free, single-turn API call.  Reviews the diff against the constraint
-and the function source (with docstring contracts) to catch obvious mistakes
-*before* burning 30 s on a toy-test run.
+Tool-free, single-turn. Reviews the full edit text against the constraint and
+the original function source. Returns a structured verdict with specific,
+actionable feedback so the Generator can fix exactly what's wrong.
 """
 
-from typing import Any, Dict, Optional
+from __future__ import annotations
 
-from core.api_agent import api_single_turn, _log
+from google.adk import Agent
+from google.genai.types import GenerateContentConfig
 
+_LLM_CONFIG = GenerateContentConfig(temperature=0)
 
-_JA_SYSTEM_PROMPT = """\
+_INSTRUCTION = """\
 You are a strict code reviewer for school-bus routing policy edits.
 
-A Generation Agent has proposed a minimal Python code edit (shown as a
-unified diff) to implement a routing constraint.  Your job is to judge
-whether the edit is ready for execution.
+You will receive several proposed edits (numbered 1, 2, 3, ...) that each attempt
+to implement the same constraint. Your job is to evaluate all of them and pick the
+BEST one that is correct and safe to execute.
 
-You will be given the original function source code.  The function's
-docstring contains Preconditions, Postconditions, and Invariants that
-describe the hard constraints the code must satisfy.  Use these to
-evaluate safety.
+Evaluate each edit on these criteria:
+1. CORRECTNESS — Does the edit fully implement the stated constraint?
+   - For must_assign ("stop X on bus Y"): stop is forced onto bus Y AND blocked from
+     all other buses. Use null-safe access (e.g. `(data.bus_current_arrivals or {}).get(bus_id)`)
+     to check bus Y exists before blocking all others — so the constraint is a no-op
+     when bus Y is missing from the scenario.
+     EXCEPTION: if the constraint text contains "instead of bus Z" (e.g. "on bus Y instead of bus Z"):
+       - The edit should ONLY block bus Z (do NOT force onto bus Y, do NOT block other buses).
+       - No null-safe check needed — you are just blocking bus Z.
+       - Example: "stop 20006 on bus 2 instead of bus 3" → ONLY block bus 3.
+       - This exception takes priority. If the edit forces onto bus Y, it FAILS this check.
+   - For must_not_assign: stop is blocked from the target bus
+   - For ordering: both stops are on the same sequence with enforced order
+   - For same_bus/not_same_bus: pairing constraint is actually enforced
+2. PLACEMENT   — Is the constraint enforced BEFORE or DURING solving?
+   - REJECT any edit that filters or modifies the final solution/output after the
+     solver returns. Post-solution filtering does NOT enforce constraints.
+   - For optimization-based solvers: constraint registration must happen BEFORE
+     the model is finalized/closed. If the edit adds constraint registration after
+     a call to a function that finalizes the model, that is WRONG.
+   - REJECT any edit that modifies data-preparation or preprocessing functions to
+     filter out vehicles/routes. Filtering at the data-prep stage corrupts indices
+     used by the model, causing infeasibility. Constraints belong in the model-building
+     function (where model.constraint() calls live), not in data setup.
+3. SAFETY      — Does it preserve all existing logic? Respects postconditions in the docstring?
+4. SYNTAX      — Is the Python syntactically valid? Is indentation consistent?
+5. SCOPE       — Are all referenced variables actually in scope at the edit location?
+6. MINIMALITY  — Is the change minimal (guard clause / condition, no unnecessary params)?
 
-Evaluate the edit on FIVE criteria:
+Your response MUST be exactly two lines:
 
-1) CORRECTNESS  — Does the diff implement the stated constraint?
-2) SAFETY       — Does it preserve all existing logic?  Would it violate
-                  any of the preconditions, postconditions, or invariants
-                  documented in the function docstring?
-3) SYNTAX       — Is the Python syntactically correct?  Is indentation
-                  consistent with the surrounding code?
-4) SCOPE        — Are all referenced variables actually in scope at the
-                  edit location?  Use the original function source
-                  provided to verify — do NOT guess about scope.
-5) MINIMALITY   — Is the change minimal (guard clause / condition), not a
-                  large rewrite?
+choice: <N>
+jud: None
 
-IMPORTANT: Your response MUST start with exactly these three lines:
+where N is the number of the best valid edit (1, 2, 3, ...). If NO edit is correct, output:
 
-APPROVED: TRUE   (or FALSE)
-ISSUES: <one-line summary of problems, or "None">
-SUGGESTIONS: <concrete fix instructions if FALSE, or "None">
+choice: None
+jud: <specific description of what is wrong across all edits and exactly what code is needed>
 
-Do NOT include any other text before the verdict lines above.
+No preamble. No explanation before the verdict. Two lines only.
 """
 
 
-def run_judgment_agent(
-    constraint: str,
-    diff: str,
-    env: Dict[str, str],
-    logs_dir: Optional[str] = None,
-    base_dir: Optional[str] = None,
-    source_context: Optional[str] = None,
-    solver_type: str = "insertion",
-) -> Dict[str, Any]:
-    """Review *diff* against *constraint* and the function source.
+def create_judgment_agent(model, static_instruction: str = "") -> Agent:
+    """Create the Verifier Agent (JA).
 
     Args:
-        source_context: Full source of the edited function (includes
-            docstring with Preconditions/Postconditions/Invariants).
-            JA uses this to verify variable scope and safety.
-
-    Returns::
-
-        {
-            "approved": bool,
-            "feedback": str,          # full JA response text
-            "cost_usd": float,
-            "input_tokens": int,
-            "output_tokens": int,
-        }
+        model: ADK model identifier or LiteLlm instance.
+        static_instruction: Optional stable context (e.g. function sources) to place
+            in static_instruction for caching. Subsequent calls only send the proposed
+            fix as the dynamic delta.
     """
-    source_section = ""
-    if source_context:
-        source_section = (
-            "## Original function source (pre-edit — includes contract in docstring)\n"
-            f"```python\n{source_context}\n```\n\n"
-        )
-
-    user_prompt = (
-        "## Constraint to implement\n"
-        f"{constraint}\n\n"
-        f"{source_section}"
-        "## Proposed edit (unified diff)\n"
-        f"```diff\n{diff}\n```\n\n"
-        "Judge this edit.  Is it correct, safe, and ready for execution?"
+    return Agent(
+        name="ja",
+        model=model,
+        description="Validates a proposed code edit before execution.",
+        static_instruction=static_instruction or None,
+        instruction=_INSTRUCTION,
+        generate_content_config=_LLM_CONFIG,
     )
-
-    result = api_single_turn(
-        user_prompt=user_prompt,
-        system_prompt=_JA_SYSTEM_PROMPT,
-        env=env,
-        logs_dir=logs_dir,
-        log_prefix="judgment_agent",
-        max_tokens=2048,
-    )
-
-    text = (result.get("text") or "").strip()
-
-    # Retry once if Gemini returned an empty response (transient API issue)
-    if not text:
-        _log(logs_dir, "judgment_agent.log",
-             f"Empty response (finishReason={result.get('finish_reason', '?')}) — retrying once")
-        result = api_single_turn(
-            user_prompt=user_prompt,
-            system_prompt=_JA_SYSTEM_PROMPT,
-            env=env,
-            logs_dir=logs_dir,
-            log_prefix="judgment_agent",
-            max_tokens=2048,
-            temperature=0.2,
-        )
-        text = (result.get("text") or "").strip()
-
-    # If still empty after retry, default to APPROVED — let the toy test
-    # be the real validator rather than silently rejecting a good edit.
-    if not text:
-        _log(logs_dir, "judgment_agent.log",
-             "Still empty after retry — defaulting to APPROVED (toy test will validate)")
-        approved = True
-    else:
-        upper = text.upper()
-        approved = "APPROVED: TRUE" in upper or "APPROVED:TRUE" in upper
-
-    _log(logs_dir, "judgment_agent.log", f"Approved: {approved}")
-
-    return {
-        "approved": approved,
-        "feedback": text,
-        "cost_usd": result.get("cost_usd", 0),
-        "input_tokens": result.get("input_tokens", 0),
-        "output_tokens": result.get("output_tokens", 0),
-    }
-
-
-_PANEL_JA_SYSTEM_PROMPT = """\
-You are a code review judge on a panel of three judges evaluating code solutions.
-
-You will receive THREE proposed code edits (diffs) for the same routing constraint.
-Each edit was produced by a different LLM model. Your job is to review ALL THREE
-independently and vote for the BEST one.
-
-Evaluate each diff on: CORRECTNESS, SAFETY, SYNTAX, SCOPE, MINIMALITY.
-Assign each a score from 0-10.
-
-VOTE for the highest-scoring diff that is APPROVED. If no diffs are approvable
-(all have critical issues), VOTE: none.
-
-Respond with EXACTLY this format:
-
-VOTE: <ga_flash | ga_pro | ga_25pro | none>
-SCORES:
-  ga_flash:  <score>/10 — <one-line reason>
-  ga_pro:    <score>/10 — <one-line reason>
-  ga_25pro:  <score>/10 — <one-line reason>
-WINNER_REASONING: <explain why winner is best, or why all were rejected>
-
-Your response MUST start with these exact lines. No preamble.
-"""
-
-
-def run_panel_judgment_agent(
-    constraint: str,
-    diffs: Dict[str, str],
-    env: Dict[str, str],
-    logs_dir: Optional[str] = None,
-    judge_id: int = 1,
-    solver_type: str = "insertion",
-) -> Dict[str, Any]:
-    """Panel judge: review ALL 3 GA diffs, vote for best.
-
-    Args:
-        constraint: The constraint statement
-        diffs: Dict with keys "ga_flash", "ga_pro", "ga_25pro", values are unified diffs
-        judge_id: 1, 2, or 3 (for logging)
-
-    Returns:
-        {
-            "vote": str,           # "ga_flash" | "ga_pro" | "ga_25pro" | "none"
-            "scores": dict,        # {"ga_flash": score, ...}
-            "winner_reasoning": str,
-            "raw_feedback": str,   # full JA response
-            "cost_usd": float,
-            "input_tokens": int,
-            "output_tokens": int,
-        }
-    """
-    # Build diffs section (all 3 side-by-side)
-    diffs_section = "## Three proposed edits (unified diffs)\n\n"
-    for model_name, diff_text in diffs.items():
-        diffs_section += f"### {model_name}\n```diff\n{diff_text}\n```\n\n"
-
-    user_prompt = (
-        "## Constraint to implement\n"
-        f"{constraint}\n\n"
-        f"{diffs_section}"
-        "Review all three diffs independently. Vote for the best one."
-    )
-
-    result = api_single_turn(
-        user_prompt=user_prompt,
-        system_prompt=_PANEL_JA_SYSTEM_PROMPT,
-        env=env,
-        logs_dir=logs_dir,
-        log_prefix=f"panel_judge_{judge_id}",
-        max_tokens=2048,
-    )
-
-    text = (result.get("text") or "").strip()
-
-    # Retry once if empty
-    if not text:
-        result = api_single_turn(
-            user_prompt=user_prompt,
-            system_prompt=_PANEL_JA_SYSTEM_PROMPT,
-            env=env,
-            logs_dir=logs_dir,
-            log_prefix=f"panel_judge_{judge_id}",
-            max_tokens=2048,
-            temperature=0.2,
-        )
-        text = (result.get("text") or "").strip()
-
-    # Parse response: extract vote and scores
-    vote = "none"
-    scores = {}
-    winner_reasoning = ""
-
-    lines = text.split("\n")
-    for i, line in enumerate(lines):
-        line_upper = line.upper()
-        if line_upper.startswith("VOTE:"):
-            vote_part = line.split(":", 1)[1].strip().lower()
-            if vote_part in ["ga_flash", "ga_pro", "ga_25pro", "none"]:
-                vote = vote_part
-        elif line_upper.startswith("WINNER_REASONING:"):
-            winner_reasoning = line.split(":", 1)[1].strip()
-        elif any(f"{m}:" in line for m in ["ga_flash:", "ga_pro:", "ga_25pro:"]):
-            for model in ["ga_flash", "ga_pro", "ga_25pro"]:
-                if f"{model}:" in line:
-                    try:
-                        score_str = line.split(":")[1].split("/")[0].strip()
-                        scores[model] = int(score_str)
-                    except (ValueError, IndexError):
-                        scores[model] = 0
-
-    _log(logs_dir, f"panel_judge_{judge_id}.log", f"Vote: {vote}")
-
-    return {
-        "vote": vote,
-        "scores": scores,
-        "winner_reasoning": winner_reasoning,
-        "raw_feedback": text,
-        "cost_usd": result.get("cost_usd", 0),
-        "input_tokens": result.get("input_tokens", 0),
-        "output_tokens": result.get("output_tokens", 0),
-    }

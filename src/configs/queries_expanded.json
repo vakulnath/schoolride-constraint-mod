@@ -1,0 +1,2114 @@
+{
+  "llm": "claude",
+  "edit_mode": "full",
+  "temp_root": "tmp_code_mod",
+  "mapping_path": "query_modification_mapping.md",
+  "constraints_path": "configs/constraints.txt",
+  "files": [
+    "src/school_bus_routing/policy/insert_heuristic.py",
+    "src/school_bus_routing/policy/insertion_policy.py"
+  ],
+  "queries": [
+    {
+      "query_id": 1,
+      "type": "must_assign",
+      "question": "What if stop 20006 must be served by bus 2 instead of bus 3?",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 2
+      },
+      "note": "Dispatcher wants to spread load \u2014 move 20006 from bus 3 to bus 2"
+    },
+    {
+      "query_id": 2,
+      "type": "must_assign",
+      "question": "Can you put stop 20001 on bus 0? Bus 3 is getting too many stops",
+      "entities": {
+        "stop_id": 20001,
+        "bus_id": 0
+      },
+      "note": "Fuzzy. Bus 0 at capacity (100/100) \u2014 agent must also override capacity for this stop"
+    },
+    {
+      "query_id": 3,
+      "type": "must_assign",
+      "question": "What if stop 20004 must be served by bus 2?",
+      "entities": {
+        "stop_id": 20004,
+        "bus_id": 2
+      },
+      "note": "Move disruption stop from bus 3 to bus 2"
+    },
+    {
+      "query_id": 4,
+      "type": "must_assign",
+      "question": "Route stop 20007 through bus 0 please, it's closer to its other stops",
+      "entities": {
+        "stop_id": 20007,
+        "bus_id": 0
+      },
+      "note": "Fuzzy. Bus 0 at capacity \u2014 agent must override capacity for this stop"
+    },
+    {
+      "query_id": 5,
+      "type": "must_assign",
+      "question": "What if stop 20002 must be served by bus 2?",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 2
+      },
+      "note": "Move disruption stop to lightly loaded bus 2"
+    },
+    {
+      "query_id": 6,
+      "type": "must_not_assign",
+      "question": "What if stop 20011 must not be served by bus 3?",
+      "entities": {
+        "stop_id": 20011,
+        "bus_id": 3
+      },
+      "note": "Force 20011 off bus 3 to another bus"
+    },
+    {
+      "query_id": 7,
+      "type": "must_not_assign",
+      "question": "I don't want bus 3 picking up stop 20007, it's too far for that route",
+      "entities": {
+        "stop_id": 20007,
+        "bus_id": 3
+      },
+      "note": "Fuzzy. Dispatcher's geographic concern"
+    },
+    {
+      "query_id": 8,
+      "type": "must_not_assign",
+      "question": "What if stop 20004 must not be served by bus 3?",
+      "entities": {
+        "stop_id": 20004,
+        "bus_id": 3
+      },
+      "note": "Force redistribution of 20004"
+    },
+    {
+      "query_id": 9,
+      "type": "must_not_assign",
+      "question": "Keep stop 20001 off bus 3",
+      "entities": {
+        "stop_id": 20001,
+        "bus_id": 3
+      },
+      "note": "Direct. Force 20001 to bus 0 or 2"
+    },
+    {
+      "query_id": 10,
+      "type": "must_not_assign",
+      "question": "What if stop 20006 must not be served by bus 0?",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 0
+      },
+      "note": "20006 is on bus 3, not bus 0 \u2014 trivially satisfied"
+    },
+    {
+      "query_id": 11,
+      "type": "capacity",
+      "question": "What if bus 3 can only carry 30 students?",
+      "entities": {
+        "bus_id": 3,
+        "capacity": 30
+      },
+      "note": "Bus 3 has 59 students from 6 stops \u2014 must shed ~half"
+    },
+    {
+      "query_id": 12,
+      "type": "capacity",
+      "question": "Bus 3 is a smaller vehicle, limit it to 40 students",
+      "entities": {
+        "bus_id": 3,
+        "capacity": 40
+      },
+      "note": "Fuzzy. Bus 3 has 59 students \u2014 shed some"
+    },
+    {
+      "query_id": 13,
+      "type": "capacity",
+      "question": "What if bus 3 capacity is reduced to 45?",
+      "entities": {
+        "bus_id": 3,
+        "capacity": 45
+      },
+      "note": "Bus 3 has 59 students \u2014 must shed ~14 students (1-2 stops)"
+    },
+    {
+      "query_id": 14,
+      "type": "capacity",
+      "question": "What if we limit bus 3 to 50 students max?",
+      "entities": {
+        "bus_id": 3,
+        "capacity": 50
+      },
+      "note": "Bus 3 has 59 \u2014 shed 1-2 stops"
+    },
+    {
+      "query_id": 15,
+      "type": "capacity",
+      "question": "Set bus 3 max capacity to 55",
+      "entities": {
+        "bus_id": 3,
+        "capacity": 55
+      },
+      "note": "Direct. Bus 3 has 59 students \u2014 shed 1 small stop"
+    },
+    {
+      "query_id": 16,
+      "type": "ordering",
+      "question": "What if stop 20001 must be served before stop 20004?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20004
+      },
+      "note": "Both on bus 3 \u2014 ordering within reassigned route"
+    },
+    {
+      "query_id": 17,
+      "type": "ordering",
+      "question": "Pick up 20002 before 20007 on their route",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20007
+      },
+      "note": "Fuzzy. Both on bus 3"
+    },
+    {
+      "query_id": 18,
+      "type": "ordering",
+      "question": "What if stop 20006 must be served before stop 20011?",
+      "entities": {
+        "stop_id_1": 20006,
+        "stop_id_2": 20011
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 19,
+      "type": "ordering",
+      "question": "The school needs stop 20004 picked up before 20001",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20001
+      },
+      "note": "Fuzzy. Both on bus 3 \u2014 opposite of natural order"
+    },
+    {
+      "query_id": 20,
+      "type": "ordering",
+      "question": "What if stop 20007 must be served before stop 20002?",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20002
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 21,
+      "type": "same_bus",
+      "question": "What if stops 20002 and 20004 must be on the same bus?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20004
+      },
+      "note": "Both already on bus 3 \u2014 trivially satisfied"
+    },
+    {
+      "query_id": 22,
+      "type": "same_bus",
+      "question": "Kids at stop 20001 and 20006 are neighbors, they should ride together",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20006
+      },
+      "note": "Fuzzy. Both on bus 3 \u2014 trivially satisfied"
+    },
+    {
+      "query_id": 23,
+      "type": "same_bus",
+      "question": "What if stops 20007 and 20011 must be on the same bus?",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20011
+      },
+      "note": "Both on bus 3 \u2014 trivially satisfied"
+    },
+    {
+      "query_id": 24,
+      "type": "same_bus",
+      "question": "Make sure stops 20002 and 20006 stay on the same bus",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20006
+      },
+      "note": "Fuzzy. Both on bus 3 \u2014 trivially satisfied"
+    },
+    {
+      "query_id": 25,
+      "type": "same_bus",
+      "question": "What if stops 20001 and 20007 must be on the same bus?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20007
+      },
+      "note": "Both on bus 3 \u2014 trivially satisfied"
+    },
+    {
+      "query_id": 26,
+      "type": "not_same_bus",
+      "question": "What if stops 20001 and 20002 must not be on the same bus?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20002
+      },
+      "note": "Both on bus 3 \u2192 forces one to move to bus 0 or 2"
+    },
+    {
+      "query_id": 27,
+      "type": "not_same_bus",
+      "question": "There's a conflict between kids at 20004 and 20007, keep them on separate buses",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20007
+      },
+      "note": "Fuzzy. Both on bus 3 \u2192 forces separation"
+    },
+    {
+      "query_id": 28,
+      "type": "not_same_bus",
+      "question": "What if stops 20006 and 20011 must not be on the same bus?",
+      "entities": {
+        "stop_id_1": 20006,
+        "stop_id_2": 20011
+      },
+      "note": "Both on bus 3 \u2192 forces separation"
+    },
+    {
+      "query_id": 29,
+      "type": "not_same_bus",
+      "question": "Separate stops 20001 and 20004 onto different buses",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20004
+      },
+      "note": "Direct. Both on bus 3 \u2192 forces separation"
+    },
+    {
+      "query_id": 30,
+      "type": "not_same_bus",
+      "question": "What if stops 20002 and 20007 must not be on the same bus?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20007
+      },
+      "note": "Both on bus 3 \u2192 forces separation"
+    },
+    {
+      "query_id": 31,
+      "type": "max_stops",
+      "question": "What if bus 3 can serve at most 3 stops?",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 3
+      },
+      "note": "Bus 3 has 6 disruption stops \u2192 must shed 3"
+    },
+    {
+      "query_id": 32,
+      "type": "max_stops",
+      "question": "Due to time constraints, bus 3 should not make more than 4 pickups",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 4
+      },
+      "note": "Fuzzy. Bus 3 has 6 \u2192 shed 2"
+    },
+    {
+      "query_id": 33,
+      "type": "max_stops",
+      "question": "What if bus 2 can serve at most 4 stops?",
+      "entities": {
+        "bus_id": 2,
+        "max_stops": 4
+      },
+      "note": "Bus 2 has 3 stops \u2014 trivially satisfied"
+    },
+    {
+      "query_id": 34,
+      "type": "max_stops",
+      "question": "Limit bus 3 to picking up no more than 5 stops",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 5
+      },
+      "note": "Fuzzy. Bus 3 has 6 \u2192 shed 1"
+    },
+    {
+      "query_id": 35,
+      "type": "max_stops",
+      "question": "What if bus 3 can serve at most 4 stops?",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 4
+      },
+      "note": "Bus 3 has 6 \u2192 must shed 2 to bus 2"
+    },
+    {
+      "query_id": 36,
+      "type": "must_assign",
+      "question": "What if stop 20011 must be served by bus 2?",
+      "entities": {
+        "stop_id": 20011,
+        "bus_id": 2
+      },
+      "note": "Move 20011 from bus 3 to lightly loaded bus 2"
+    },
+    {
+      "query_id": 37,
+      "type": "must_assign",
+      "question": "We need stop 20002 picked up by bus 0, not bus 3",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 0
+      },
+      "note": "Move 20002 from bus 3 to heavily loaded bus 0"
+    },
+    {
+      "query_id": 38,
+      "type": "must_assign",
+      "question": "What if stop 20007 has to be on bus 2's route?",
+      "entities": {
+        "stop_id": 20007,
+        "bus_id": 2
+      },
+      "note": "Move 20007 from bus 3 to bus 2"
+    },
+    {
+      "query_id": 39,
+      "type": "must_assign",
+      "question": "Reassign stop 20004 to bus 0 immediately",
+      "entities": {
+        "stop_id": 20004,
+        "bus_id": 0
+      },
+      "note": "Direct dispatcher command. Move from bus 3 to bus 0"
+    },
+    {
+      "query_id": 40,
+      "type": "must_assign",
+      "question": "I'd like stop 20011 to be picked up by bus 0 if possible",
+      "entities": {
+        "stop_id": 20011,
+        "bus_id": 0
+      },
+      "note": "Polite/fuzzy. Move 20011 from bus 3 to bus 0"
+    },
+    {
+      "query_id": 41,
+      "type": "must_assign",
+      "question": "Why isn't stop 20006 on bus 0? Put it there",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 0
+      },
+      "note": "Question + command hybrid. Move 20006 from bus 2 to bus 0"
+    },
+    {
+      "query_id": 42,
+      "type": "must_assign",
+      "question": "The parent at stop 20001 requested bus 2 specifically",
+      "entities": {
+        "stop_id": 20001,
+        "bus_id": 2
+      },
+      "note": "Contextual/narrative phrasing. Move 20001 from bus 3 to bus 2"
+    },
+    {
+      "query_id": 43,
+      "type": "must_assign",
+      "question": "Transfer stop 20004 over to bus 2's route, bus 3 is overloaded",
+      "entities": {
+        "stop_id": 20004,
+        "bus_id": 2
+      },
+      "note": "Dispatcher rationale included. Duplicate target as query 3 but different phrasing"
+    },
+    {
+      "query_id": 44,
+      "type": "must_assign",
+      "question": "What happens if we force stop 20002 onto bus 0?",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 0
+      },
+      "note": "What-if exploratory phrasing"
+    },
+    {
+      "query_id": 45,
+      "type": "must_assign",
+      "question": "Can bus 2 take over stop 20007 from bus 3?",
+      "entities": {
+        "stop_id": 20007,
+        "bus_id": 2
+      },
+      "note": "Question form. Move 20007 from bus 3 to bus 2"
+    },
+    {
+      "query_id": 46,
+      "type": "must_assign",
+      "question": "Stop 20011 should really be on bus 2, the families there prefer that route",
+      "entities": {
+        "stop_id": 20011,
+        "bus_id": 2
+      },
+      "note": "Narrative with soft rationale"
+    },
+    {
+      "query_id": 47,
+      "type": "must_assign",
+      "question": "We got a call \u2014 stop 20006 needs to be on bus 3",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 3
+      },
+      "note": "Move 20006 from bus 2 back to bus 3. Tests reverse reassignment"
+    },
+    {
+      "query_id": 48,
+      "type": "must_assign",
+      "question": "Ensure stop 20001 ends up on bus 2 after the disruption",
+      "entities": {
+        "stop_id": 20001,
+        "bus_id": 2
+      },
+      "note": "Post-disruption context. Move from bus 3 to bus 2"
+    },
+    {
+      "query_id": 49,
+      "type": "must_assign",
+      "question": "What if we move stop 20004 to bus 0 to balance the routes?",
+      "entities": {
+        "stop_id": 20004,
+        "bus_id": 0
+      },
+      "note": "Load-balancing rationale"
+    },
+    {
+      "query_id": 50,
+      "type": "must_assign",
+      "question": "Is it possible to have bus 0 serve stop 20006?",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 0
+      },
+      "note": "Question form. Move 20006 from bus 2 to bus 0"
+    },
+    {
+      "query_id": 51,
+      "type": "must_not_assign",
+      "question": "What if stop 20002 must not be served by bus 3?",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 3
+      },
+      "note": "Force 20002 off bus 3 to bus 0 or 2"
+    },
+    {
+      "query_id": 52,
+      "type": "must_not_assign",
+      "question": "Bus 0 should not pick up stop 20001 under any circumstances",
+      "entities": {
+        "stop_id": 20001,
+        "bus_id": 0
+      },
+      "note": "20001 is on bus 3, not bus 0 \u2014 trivially satisfied but constrains future"
+    },
+    {
+      "query_id": 53,
+      "type": "must_not_assign",
+      "question": "Don't let bus 2 handle stop 20007",
+      "entities": {
+        "stop_id": 20007,
+        "bus_id": 2
+      },
+      "note": "Direct. 20007 is on bus 3 \u2014 constrains future assignment options"
+    },
+    {
+      "query_id": 54,
+      "type": "must_not_assign",
+      "question": "What if stop 20006 must not be served by bus 2?",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 2
+      },
+      "note": "Forces 20006 off bus 2 where it currently is \u2014 must move to bus 0 or 3"
+    },
+    {
+      "query_id": 55,
+      "type": "must_not_assign",
+      "question": "What if stop 20002 cannot go on bus 0?",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 0
+      },
+      "note": "20002 is on bus 3 \u2014 limits options if bus 3 sheds it"
+    },
+    {
+      "query_id": 56,
+      "type": "must_not_assign",
+      "question": "We have a rule that stop 20004 must not be on bus 0",
+      "entities": {
+        "stop_id": 20004,
+        "bus_id": 0
+      },
+      "note": "Policy constraint phrasing"
+    },
+    {
+      "query_id": 57,
+      "type": "must_not_assign",
+      "question": "Stop 20011 is not allowed on bus 2",
+      "entities": {
+        "stop_id": 20011,
+        "bus_id": 2
+      },
+      "note": "Direct prohibition. 20011 on bus 3 \u2014 limits redistribution"
+    },
+    {
+      "query_id": 58,
+      "type": "must_not_assign",
+      "question": "What if bus 3 is not allowed to serve stop 20006?",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 3
+      },
+      "note": "20006 on bus 2 \u2014 trivially satisfied but constrains solver"
+    },
+    {
+      "query_id": 59,
+      "type": "must_not_assign",
+      "question": "Remove the option of bus 0 serving stop 20007",
+      "entities": {
+        "stop_id": 20007,
+        "bus_id": 0
+      },
+      "note": "20007 on bus 3 \u2014 restricts future assignment"
+    },
+    {
+      "query_id": 60,
+      "type": "must_not_assign",
+      "question": "What if stop 20001 is barred from bus 2?",
+      "entities": {
+        "stop_id": 20001,
+        "bus_id": 2
+      },
+      "note": "20001 on bus 3 \u2014 limits redistribution options to bus 0 only"
+    },
+    {
+      "query_id": 61,
+      "type": "must_not_assign",
+      "question": "I need stop 20004 kept off bus 2 for safety reasons",
+      "entities": {
+        "stop_id": 20004,
+        "bus_id": 2
+      },
+      "note": "Fuzzy with safety rationale. 20004 on bus 3 \u2014 limits redistribution"
+    },
+    {
+      "query_id": 62,
+      "type": "must_not_assign",
+      "question": "What if bus 2 cannot service stop 20002?",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 2
+      },
+      "note": "20002 on bus 3 \u2014 restricts to bus 0 if shed"
+    },
+    {
+      "query_id": 63,
+      "type": "must_not_assign",
+      "question": "Under no circumstances should stop 20011 go on bus 0",
+      "entities": {
+        "stop_id": 20011,
+        "bus_id": 0
+      },
+      "note": "Emphatic. Restricts to bus 2 if shed from bus 3"
+    },
+    {
+      "query_id": 64,
+      "type": "must_not_assign",
+      "question": "The driver of bus 3 says stop 20002 is too far \u2014 take it off their route",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 3
+      },
+      "note": "Narrative. Forces 20002 off bus 3"
+    },
+    {
+      "query_id": 65,
+      "type": "must_not_assign",
+      "question": "What if stop 20007 is restricted from bus 3?",
+      "entities": {
+        "stop_id": 20007,
+        "bus_id": 3
+      },
+      "note": "Forces 20007 off bus 3 to bus 0 or 2"
+    },
+    {
+      "query_id": 66,
+      "type": "must_not_assign",
+      "question": "Bus 0 must not serve stop 20006",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 0
+      },
+      "note": "20006 on bus 2 \u2014 trivially satisfied currently"
+    },
+    {
+      "query_id": 67,
+      "type": "capacity",
+      "question": "What if bus 0 can only carry 50 students?",
+      "entities": {
+        "bus_id": 0,
+        "capacity": 50
+      },
+      "note": "Bus 0 has ~60 students \u2014 must shed ~10 students worth of stops"
+    },
+    {
+      "query_id": 68,
+      "type": "capacity",
+      "question": "Reduce bus 0's capacity to 40 students",
+      "entities": {
+        "bus_id": 0,
+        "capacity": 40
+      },
+      "note": "Direct. Bus 0 has ~60 \u2014 aggressive reduction, must shed ~20 students"
+    },
+    {
+      "query_id": 69,
+      "type": "capacity",
+      "question": "What if bus 2 can only hold 20 students?",
+      "entities": {
+        "bus_id": 2,
+        "capacity": 20
+      },
+      "note": "Bus 2 has ~27 students \u2014 must shed 1 stop"
+    },
+    {
+      "query_id": 70,
+      "type": "capacity",
+      "question": "We're swapping bus 3 for a van \u2014 max 25 students",
+      "entities": {
+        "bus_id": 3,
+        "capacity": 25
+      },
+      "note": "Fuzzy narrative. Bus 3 has 59 \u2014 severe reduction, shed most stops"
+    },
+    {
+      "query_id": 71,
+      "type": "capacity",
+      "question": "What if bus 0 has a capacity limit of 55 students?",
+      "entities": {
+        "bus_id": 0,
+        "capacity": 55
+      },
+      "note": "Bus 0 has ~60 \u2014 must shed ~5 students (1 small stop)"
+    },
+    {
+      "query_id": 72,
+      "type": "capacity",
+      "question": "Bus 2 had some seats removed for equipment, cap it at 15",
+      "entities": {
+        "bus_id": 2,
+        "capacity": 15
+      },
+      "note": "Fuzzy. Bus 2 has ~27 \u2014 aggressive, must shed ~12 students"
+    },
+    {
+      "query_id": 73,
+      "type": "capacity",
+      "question": "What if bus 3 is limited to 35 students due to a mechanical issue?",
+      "entities": {
+        "bus_id": 3,
+        "capacity": 35
+      },
+      "note": "Bus 3 has 59 \u2014 must shed ~24 students (2-3 stops)"
+    },
+    {
+      "query_id": 74,
+      "type": "capacity",
+      "question": "Lower bus 2's max to 25 students",
+      "entities": {
+        "bus_id": 2,
+        "capacity": 25
+      },
+      "note": "Bus 2 has ~27 \u2014 marginal, shed 1 small stop"
+    },
+    {
+      "query_id": 75,
+      "type": "capacity",
+      "question": "What if the capacity on bus 0 drops to 45?",
+      "entities": {
+        "bus_id": 0,
+        "capacity": 45
+      },
+      "note": "Bus 0 has ~60 \u2014 must shed ~15 students"
+    },
+    {
+      "query_id": 76,
+      "type": "capacity",
+      "question": "The inspector says bus 3 can hold no more than 20",
+      "entities": {
+        "bus_id": 3,
+        "capacity": 20
+      },
+      "note": "Narrative. Extreme reduction \u2014 bus 3 has 59, must shed most"
+    },
+    {
+      "query_id": 77,
+      "type": "capacity",
+      "question": "What if bus 0 can only take 35 more students?",
+      "entities": {
+        "bus_id": 0,
+        "capacity": 35
+      },
+      "note": "Bus 0 has ~60 \u2014 severe reduction"
+    },
+    {
+      "query_id": 78,
+      "type": "capacity",
+      "question": "Cap bus 2 at 10 students for this emergency run",
+      "entities": {
+        "bus_id": 2,
+        "capacity": 10
+      },
+      "note": "Emergency context. Bus 2 has ~27 \u2014 very aggressive"
+    },
+    {
+      "query_id": 79,
+      "type": "capacity",
+      "question": "What if we need to limit bus 3 to 48 students?",
+      "entities": {
+        "bus_id": 3,
+        "capacity": 48
+      },
+      "note": "Bus 3 has 59 \u2014 must shed ~11 students"
+    },
+    {
+      "query_id": 80,
+      "type": "capacity",
+      "question": "Safety regulations require bus 0 to carry no more than 52 students",
+      "entities": {
+        "bus_id": 0,
+        "capacity": 52
+      },
+      "note": "Regulatory phrasing. Bus 0 has ~60"
+    },
+    {
+      "query_id": 81,
+      "type": "capacity",
+      "question": "What if bus 2's capacity is only 22 students today?",
+      "entities": {
+        "bus_id": 2,
+        "capacity": 22
+      },
+      "note": "Bus 2 has ~27 \u2014 must shed ~5 students"
+    },
+    {
+      "query_id": 82,
+      "type": "ordering",
+      "question": "What if stop 20001 must be visited before stop 20002?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20002
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 83,
+      "type": "ordering",
+      "question": "Stop 20004 needs to be served before stop 20011",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20011
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 84,
+      "type": "ordering",
+      "question": "What if stop 20011 must come before stop 20001?",
+      "entities": {
+        "stop_id_1": 20011,
+        "stop_id_2": 20001
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 85,
+      "type": "ordering",
+      "question": "Can we make sure 20007 is picked up before 20004?",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20004
+      },
+      "note": "Fuzzy. Both on bus 3"
+    },
+    {
+      "query_id": 86,
+      "type": "ordering",
+      "question": "What if stop 20002 must be picked up before stop 20001?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20001
+      },
+      "note": "Both on bus 3 \u2014 already in this order in base"
+    },
+    {
+      "query_id": 87,
+      "type": "ordering",
+      "question": "Visit stop 20011 before stop 20004 on the route",
+      "entities": {
+        "stop_id_1": 20011,
+        "stop_id_2": 20004
+      },
+      "note": "Direct. Both on bus 3"
+    },
+    {
+      "query_id": 88,
+      "type": "ordering",
+      "question": "What if we need to get to 20001 before 20011?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20011
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 89,
+      "type": "ordering",
+      "question": "The parent at 20007 says their kid must be picked up before the kids at 20011",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20011
+      },
+      "note": "Narrative. Both on bus 3"
+    },
+    {
+      "query_id": 90,
+      "type": "ordering",
+      "question": "What if stop 20004 has to be visited before stop 20007?",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20007
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 91,
+      "type": "ordering",
+      "question": "Serve stop 20002 before stop 20004",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20004
+      },
+      "note": "Direct. Both on bus 3"
+    },
+    {
+      "query_id": 92,
+      "type": "ordering",
+      "question": "What if the bus needs to reach stop 20011 before stop 20007?",
+      "entities": {
+        "stop_id_1": 20011,
+        "stop_id_2": 20007
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 93,
+      "type": "ordering",
+      "question": "Priority: get to 20001 before 20007",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20007
+      },
+      "note": "Terse dispatcher style. Both on bus 3"
+    },
+    {
+      "query_id": 94,
+      "type": "ordering",
+      "question": "What if stop 20002 must be served before stop 20011?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20011
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 95,
+      "type": "ordering",
+      "question": "We promised the school that 20004 would be picked up before 20002",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20002
+      },
+      "note": "Narrative. Both on bus 3"
+    },
+    {
+      "query_id": 96,
+      "type": "ordering",
+      "question": "What if stop 20007 must be served before stop 20001?",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20001
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 97,
+      "type": "ordering",
+      "question": "Make sure 20011 gets picked up before 20002",
+      "entities": {
+        "stop_id_1": 20011,
+        "stop_id_2": 20002
+      },
+      "note": "Direct. Both on bus 3"
+    },
+    {
+      "query_id": 98,
+      "type": "ordering",
+      "question": "What if stop 20001 must be collected before stop 20011 on the route?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20011
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 99,
+      "type": "ordering",
+      "question": "Prioritize stop 20002 over stop 20004 in the pickup sequence",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20004
+      },
+      "note": "Both on bus 3"
+    },
+    {
+      "query_id": 100,
+      "type": "same_bus",
+      "question": "These siblings go to stops 20001 and 20006, keep them together",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20006
+      },
+      "note": "Fuzzy. 20001 on bus 3, 20006 on bus 2 \u2014 forces co-assignment"
+    },
+    {
+      "query_id": 101,
+      "type": "same_bus",
+      "question": "Pair stops 20004 and 20006 on one bus",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20006
+      },
+      "note": "20004 on bus 3, 20006 on bus 2 \u2014 forces co-assignment"
+    },
+    {
+      "query_id": 102,
+      "type": "same_bus",
+      "question": "The families at 20002 and 20006 carpool \u2014 same bus please",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20006
+      },
+      "note": "Narrative. 20002 on bus 3, 20006 on bus 2 \u2014 forces co-assignment"
+    },
+    {
+      "query_id": 103,
+      "type": "same_bus",
+      "question": "Can we ensure 20011 and 20006 end up on the same bus?",
+      "entities": {
+        "stop_id_1": 20011,
+        "stop_id_2": 20006
+      },
+      "note": "20011 on bus 3, 20006 on bus 2 \u2014 forces co-assignment"
+    },
+    {
+      "query_id": 104,
+      "type": "same_bus",
+      "question": "Group stops 20007 and 20006 together on one bus",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20006
+      },
+      "note": "20007 on bus 3, 20006 on bus 2 \u2014 forces co-assignment"
+    },
+    {
+      "query_id": 105,
+      "type": "same_bus",
+      "question": "What if stops 20001 and 20004 must be served by the same vehicle?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20004
+      },
+      "note": "Both on bus 3 \u2014 trivially satisfied"
+    },
+    {
+      "query_id": 106,
+      "type": "same_bus",
+      "question": "What if stops 20004 and 20011 must share a bus?",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20011
+      },
+      "note": "Both on bus 3 \u2014 trivially satisfied"
+    },
+    {
+      "query_id": 107,
+      "type": "same_bus",
+      "question": "Bundle stops 20001 and 20006 onto the same route for efficiency",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20006
+      },
+      "note": "20001 on bus 3, 20006 on bus 2 \u2014 forces co-assignment"
+    },
+    {
+      "query_id": 108,
+      "type": "not_same_bus",
+      "question": "What if stops 20001 and 20011 must not be on the same bus?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20011
+      },
+      "note": "Both on bus 3 \u2014 forces one to move"
+    },
+    {
+      "query_id": 109,
+      "type": "not_same_bus",
+      "question": "I need stops 20002 and 20004 on different buses, the parents don't get along",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20004
+      },
+      "note": "Narrative. Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 110,
+      "type": "not_same_bus",
+      "question": "What if stops 20007 and 20001 cannot share a bus?",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20001
+      },
+      "note": "Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 111,
+      "type": "not_same_bus",
+      "question": "Split stops 20011 and 20004 across different vehicles",
+      "entities": {
+        "stop_id_1": 20011,
+        "stop_id_2": 20004
+      },
+      "note": "Direct. Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 112,
+      "type": "not_same_bus",
+      "question": "What if stops 20002 and 20011 must be on separate buses?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20011
+      },
+      "note": "Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 113,
+      "type": "not_same_bus",
+      "question": "There's a bullying situation \u2014 keep 20001 and 20007 apart",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20007
+      },
+      "note": "Narrative with serious context. Both on bus 3"
+    },
+    {
+      "query_id": 114,
+      "type": "not_same_bus",
+      "question": "What if stops 20004 and 20002 must not ride together?",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20002
+      },
+      "note": "Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 115,
+      "type": "not_same_bus",
+      "question": "Don't put 20007 and 20011 on the same bus anymore",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20011
+      },
+      "note": "Direct. Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 116,
+      "type": "not_same_bus",
+      "question": "What if stop 20001 and stop 20004 cannot be on the same route?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20004
+      },
+      "note": "Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 117,
+      "type": "not_same_bus",
+      "question": "Ensure stops 20007 and 20004 end up on different buses",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20004
+      },
+      "note": "Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 118,
+      "type": "not_same_bus",
+      "question": "What if stops 20002 and 20001 must be separated?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20001
+      },
+      "note": "Both on bus 3 \u2014 forces one off"
+    },
+    {
+      "query_id": 119,
+      "type": "not_same_bus",
+      "question": "The kids at 20011 and 20007 need to be on different buses for behavioral reasons",
+      "entities": {
+        "stop_id_1": 20011,
+        "stop_id_2": 20007
+      },
+      "note": "Narrative. Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 120,
+      "type": "not_same_bus",
+      "question": "What if stops 20004 and 20011 must not share a bus?",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20011
+      },
+      "note": "Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 121,
+      "type": "not_same_bus",
+      "question": "Separate 20001 and 20011 \u2014 different vehicles required",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20011
+      },
+      "note": "Direct. Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 122,
+      "type": "not_same_bus",
+      "question": "What if stops 20007 and 20002 have to go on different buses?",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20002
+      },
+      "note": "Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 123,
+      "type": "not_same_bus",
+      "question": "For scheduling reasons, put 20002 and 20004 on separate routes",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20004
+      },
+      "note": "Rationale included. Both on bus 3"
+    },
+    {
+      "query_id": 124,
+      "type": "not_same_bus",
+      "question": "What if 20006 and 20001 cannot be on the same bus?",
+      "entities": {
+        "stop_id_1": 20006,
+        "stop_id_2": 20001
+      },
+      "note": "20006 on bus 2, 20001 on bus 3 \u2014 already separated, trivially satisfied"
+    },
+    {
+      "query_id": 125,
+      "type": "not_same_bus",
+      "question": "Keep stops 20006 and 20007 on separate buses",
+      "entities": {
+        "stop_id_1": 20006,
+        "stop_id_2": 20007
+      },
+      "note": "20006 on bus 2, 20007 on bus 3 \u2014 already separated, trivially satisfied"
+    },
+    {
+      "query_id": 126,
+      "type": "max_stops",
+      "question": "What if bus 3 can serve at most 2 disruption stops?",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 2
+      },
+      "note": "Bus 3 has 5 disruption stops \u2014 must shed 3"
+    },
+    {
+      "query_id": 127,
+      "type": "max_stops",
+      "question": "Cap bus 0 at 5 stops maximum",
+      "entities": {
+        "bus_id": 0,
+        "max_stops": 5
+      },
+      "note": "Bus 0 has 6 stops \u2014 must shed 1"
+    },
+    {
+      "query_id": 128,
+      "type": "max_stops",
+      "question": "What if bus 2 can only handle 3 stops total?",
+      "entities": {
+        "bus_id": 2,
+        "max_stops": 3
+      },
+      "note": "Bus 2 has 4 stops \u2014 must shed 1"
+    },
+    {
+      "query_id": 129,
+      "type": "max_stops",
+      "question": "Bus 3 is running late \u2014 limit it to 1 pickup only",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 1
+      },
+      "note": "Extreme. Bus 3 has 5 disruption stops \u2014 must shed 4"
+    },
+    {
+      "query_id": 130,
+      "type": "max_stops",
+      "question": "What if bus 0 can serve no more than 4 stops?",
+      "entities": {
+        "bus_id": 0,
+        "max_stops": 4
+      },
+      "note": "Bus 0 has 6 stops \u2014 must shed 2"
+    },
+    {
+      "query_id": 131,
+      "type": "max_stops",
+      "question": "Restrict bus 2 to handling at most 2 stops",
+      "entities": {
+        "bus_id": 2,
+        "max_stops": 2
+      },
+      "note": "Bus 2 has 4 stops \u2014 must shed 2"
+    },
+    {
+      "query_id": 132,
+      "type": "max_stops",
+      "question": "What if bus 3 has a maximum of 3 disruption pickups?",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 3
+      },
+      "note": "Bus 3 has 5 disruption stops \u2014 must shed 2"
+    },
+    {
+      "query_id": 133,
+      "type": "max_stops",
+      "question": "Because of road closures, bus 0 should visit at most 3 stops",
+      "entities": {
+        "bus_id": 0,
+        "max_stops": 3
+      },
+      "note": "Narrative. Bus 0 has 6 stops \u2014 must shed 3"
+    },
+    {
+      "query_id": 134,
+      "type": "max_stops",
+      "question": "What if bus 2 is limited to just 1 stop?",
+      "entities": {
+        "bus_id": 2,
+        "max_stops": 1
+      },
+      "note": "Extreme. Bus 2 has 4 stops \u2014 shed 3"
+    },
+    {
+      "query_id": 135,
+      "type": "max_stops",
+      "question": "No more than 4 pickups for bus 3 today",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 4
+      },
+      "note": "Direct dispatcher. Bus 3 has 5 disruption stops \u2014 shed 1"
+    },
+    {
+      "query_id": 136,
+      "type": "max_stops",
+      "question": "What if bus 0 cannot make more than 2 pickups?",
+      "entities": {
+        "bus_id": 0,
+        "max_stops": 2
+      },
+      "note": "Bus 0 has 6 stops \u2014 severe reduction, shed 4"
+    },
+    {
+      "query_id": 137,
+      "type": "max_stops",
+      "question": "Keep bus 2's route short \u2014 2 stops max",
+      "entities": {
+        "bus_id": 2,
+        "max_stops": 2
+      },
+      "note": "Fuzzy. Bus 2 has 4 stops \u2014 shed 2"
+    },
+    {
+      "query_id": 138,
+      "type": "max_stops",
+      "question": "What if bus 3 must not exceed 2 stops in total?",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 2
+      },
+      "note": "Bus 3 has 5 disruption stops \u2014 must shed 3"
+    },
+    {
+      "query_id": 139,
+      "type": "max_stops",
+      "question": "The driver for bus 0 can only make 3 more stops before the bell rings",
+      "entities": {
+        "bus_id": 0,
+        "max_stops": 3
+      },
+      "note": "Narrative with time pressure. Bus 0 has 6 \u2014 shed 3"
+    },
+    {
+      "query_id": 140,
+      "type": "max_stops",
+      "question": "What if we limit every bus to 4 stops? Just apply it to bus 3 for now",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 4
+      },
+      "note": "Mixed instruction \u2014 apply to bus 3 only. Bus 3 has 5 \u2014 shed 1"
+    },
+    {
+      "query_id": 141,
+      "type": "must_assign",
+      "question": "Redirect stop 20011 to bus 0, bus 3's route is too long",
+      "entities": {
+        "stop_id": 20011,
+        "bus_id": 0
+      },
+      "note": "Route-length rationale. Move from bus 3 to bus 0"
+    },
+    {
+      "query_id": 142,
+      "type": "must_not_assign",
+      "question": "What if none of the disruption stops can go on bus 2? Start with stop 20001",
+      "entities": {
+        "stop_id": 20001,
+        "bus_id": 2
+      },
+      "note": "Broader context but specific constraint on 20001"
+    },
+    {
+      "query_id": 143,
+      "type": "capacity",
+      "question": "Bus 0 had a fender bender \u2014 reduce its capacity to 48",
+      "entities": {
+        "bus_id": 0,
+        "capacity": 48
+      },
+      "note": "Narrative accident context. Bus 0 has ~60"
+    },
+    {
+      "query_id": 144,
+      "type": "capacity",
+      "question": "What if all buses are limited to 40 students? Apply to bus 3 first",
+      "entities": {
+        "bus_id": 3,
+        "capacity": 40
+      },
+      "note": "Fleet-wide context, specific to bus 3. Has 59 students"
+    },
+    {
+      "query_id": 145,
+      "type": "ordering",
+      "question": "What if stop 20011 must be the last disruption pickup?",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20011
+      },
+      "note": "Implicit ordering \u2014 20011 after all others. Pair with 20007"
+    },
+    {
+      "query_id": 146,
+      "type": "same_bus",
+      "question": "What if stops 20007 and 20006 must share the same bus?",
+      "entities": {
+        "stop_id_1": 20007,
+        "stop_id_2": 20006
+      },
+      "note": "20007 on bus 3, 20006 on bus 2 \u2014 forces co-assignment"
+    },
+    {
+      "query_id": 147,
+      "type": "not_same_bus",
+      "question": "What if stops 20004 and 20007 are not allowed on the same vehicle?",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20007
+      },
+      "note": "Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 148,
+      "type": "not_same_bus",
+      "question": "We have a conflict at stops 20001 and 20002 \u2014 different buses needed",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20002
+      },
+      "note": "Narrative. Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 149,
+      "type": "max_stops",
+      "question": "Due to the emergency, each bus should handle at most 3 disruption stops. Apply to bus 3",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 3
+      },
+      "note": "Emergency context. Bus 3 has 5 disruption stops \u2014 shed 2"
+    },
+    {
+      "query_id": 150,
+      "type": "must_assign",
+      "question": "Swap stop 20006 from bus 2 to bus 3 and stop 20002 from bus 3 to bus 2",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 3
+      },
+      "note": "Complex swap request \u2014 focus on first part: 20006 to bus 3"
+    },
+    {
+      "query_id": 151,
+      "type": "must_assign",
+      "question": "What if a parent specifically requests bus 0 for their child at stop 20002?",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 0
+      },
+      "note": "Parent request narrative. Move from bus 3 to bus 0"
+    },
+    {
+      "query_id": 152,
+      "type": "must_not_assign",
+      "question": "The road near stop 20006 is closed for bus 3 \u2014 it cannot serve that stop",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 3
+      },
+      "note": "Road closure narrative. 20006 on bus 2, not bus 3 \u2014 trivially satisfied"
+    },
+    {
+      "query_id": 153,
+      "type": "must_not_assign",
+      "question": "What if bus 0 is restricted from serving any stop above 20005? Apply to stop 20006",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 0
+      },
+      "note": "Zone-based restriction. 20006 on bus 2 \u2014 restricts future"
+    },
+    {
+      "query_id": 154,
+      "type": "capacity",
+      "question": "Due to social distancing, bus 3's capacity drops to 30",
+      "entities": {
+        "bus_id": 3,
+        "capacity": 30
+      },
+      "note": "COVID-style narrative. Bus 3 has 59 \u2014 severe cut"
+    },
+    {
+      "query_id": 155,
+      "type": "capacity",
+      "question": "What if bus 2 only has room for 18 more students?",
+      "entities": {
+        "bus_id": 2,
+        "capacity": 18
+      },
+      "note": "Bus 2 has ~27 \u2014 shed ~9 students"
+    },
+    {
+      "query_id": 156,
+      "type": "ordering",
+      "question": "The crossing guard at 20004 leaves at 8am \u2014 visit it before 20007",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20007
+      },
+      "note": "Real-world time constraint narrative. Both on bus 3"
+    },
+    {
+      "query_id": 157,
+      "type": "not_same_bus",
+      "question": "What if stops 20011 and 20002 cannot ride the same bus?",
+      "entities": {
+        "stop_id_1": 20011,
+        "stop_id_2": 20002
+      },
+      "note": "Both on bus 3 \u2014 forces separation"
+    },
+    {
+      "query_id": 158,
+      "type": "max_stops",
+      "question": "What if bus 0 is restricted to 4 total stops after the disruption?",
+      "entities": {
+        "bus_id": 0,
+        "max_stops": 4
+      },
+      "note": "Post-disruption context. Bus 0 has 6 \u2014 shed 2"
+    },
+    {
+      "query_id": 159,
+      "type": "max_stops",
+      "question": "Keep bus 3 to exactly 3 stops, no more",
+      "entities": {
+        "bus_id": 3,
+        "max_stops": 3
+      },
+      "note": "Direct. Bus 3 has 5 disruption stops \u2014 shed 2"
+    },
+    {
+      "query_id": 160,
+      "type": "must_assign",
+      "question": "Why is bus 3 handling stop 20007 instead of bus 2? Put it on bus 2",
+      "entities": {
+        "stop_id": 20007,
+        "bus_id": 2
+      },
+      "note": "Question + command. Mod 5 style phrasing"
+    },
+    {
+      "query_id": 161,
+      "type": "must_assign",
+      "question": "Why is bus 3 assigned to serve stop 20004 instead of bus 0?",
+      "entities": {
+        "stop_id": 20004,
+        "bus_id": 0
+      },
+      "note": "Mod 5: question about current assignment. Move 20004 to bus 0"
+    },
+    {
+      "query_id": 162,
+      "type": "must_assign",
+      "question": "What if bus 2 serves stop 20001 instead of bus 3?",
+      "entities": {
+        "stop_id": 20001,
+        "bus_id": 2
+      },
+      "note": "Mod 5 phrasing: swap between buses"
+    },
+    {
+      "query_id": 163,
+      "type": "must_assign",
+      "question": "Why is stop 20002 on bus 3 and not bus 0? Switch it",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 0
+      },
+      "note": "Mod 5: challenge current assignment + directive"
+    },
+    {
+      "query_id": 164,
+      "type": "must_assign",
+      "question": "Have bus 0 pick up stop 20011 instead of bus 3 picking it up",
+      "entities": {
+        "stop_id": 20011,
+        "bus_id": 0
+      },
+      "note": "Mod 5: explicit swap direction"
+    },
+    {
+      "query_id": 165,
+      "type": "ordering",
+      "question": "Service stop 20001 before stop 20002 on bus 3's route",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20002
+      },
+      "note": "Explicit bus reference. Both on bus 3"
+    },
+    {
+      "query_id": 166,
+      "type": "same_bus",
+      "question": "What if stops 20002 and 20007 need to stay together on one bus?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20007
+      },
+      "note": "Both on bus 3 \u2014 trivially satisfied"
+    },
+    {
+      "query_id": 167,
+      "type": "capacity",
+      "question": "What if bus 0's capacity is cut in half to 30 students?",
+      "entities": {
+        "bus_id": 0,
+        "capacity": 30
+      },
+      "note": "Bus 0 has ~60 \u2014 extreme cut, must shed half its load"
+    },
+    {
+      "query_id": 168,
+      "type": "capacity",
+      "question": "Limit bus 2 to 12 students because of a seating issue",
+      "entities": {
+        "bus_id": 2,
+        "capacity": 12
+      },
+      "note": "Bus 2 has ~27 \u2014 must shed more than half"
+    },
+    {
+      "query_id": 169,
+      "type": "max_stops",
+      "question": "What if no bus can serve more than 5 stops? Apply this to bus 0",
+      "entities": {
+        "bus_id": 0,
+        "max_stops": 5
+      },
+      "note": "Fleet-wide context applied to bus 0. Has 6 stops \u2014 shed 1"
+    },
+    {
+      "query_id": 170,
+      "type": "same_bus",
+      "question": "What if stops 20001 and 20002 must be on the same bus?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20002
+      },
+      "note": "New pair: (20001,20002)"
+    },
+    {
+      "query_id": 171,
+      "type": "same_bus",
+      "question": "These kids live near each other \u2014 stops 20001 and 20011 should ride together",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20011
+      },
+      "note": "New pair: (20001,20011)"
+    },
+    {
+      "query_id": 172,
+      "type": "same_bus",
+      "question": "What if stops 20002 and 20011 must be on the same bus?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20011
+      },
+      "note": "New pair: (20002,20011)"
+    },
+    {
+      "query_id": 173,
+      "type": "same_bus",
+      "question": "Can we bundle stops 20004 and 20007 onto one bus?",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20007
+      },
+      "note": "New pair: (20004,20007)"
+    },
+    {
+      "query_id": 174,
+      "type": "same_bus",
+      "question": "What if stops 20006 and 20011 should share a vehicle?",
+      "entities": {
+        "stop_id_1": 20006,
+        "stop_id_2": 20011
+      },
+      "note": "Reuse (20006,20011) with new phrasing"
+    },
+    {
+      "query_id": 175,
+      "type": "same_bus",
+      "question": "The parents at 20001 and 20002 carpool \u2014 keep their kids on the same bus",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20002
+      },
+      "note": "Reuse (20001,20002) with new phrasing"
+    },
+    {
+      "query_id": 176,
+      "type": "same_bus",
+      "question": "What if stops 20004 and 20007 must be on the same route?",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20007
+      },
+      "note": "Reuse (20004,20007) \u2014 different phrasing"
+    },
+    {
+      "query_id": 177,
+      "type": "same_bus",
+      "question": "Pair stops 20002 and 20011 on one bus for efficiency",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20011
+      },
+      "note": "Reuse (20002,20011)"
+    },
+    {
+      "query_id": 178,
+      "type": "same_bus",
+      "question": "What if stops 20001 and 20011 must share a bus?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20011
+      },
+      "note": "Reuse (20001,20011)"
+    },
+    {
+      "query_id": 179,
+      "type": "same_bus",
+      "question": "Group stops 20006 and 20011 together \u2014 same vehicle",
+      "entities": {
+        "stop_id_1": 20006,
+        "stop_id_2": 20011
+      },
+      "note": "Reuse (20006,20011)"
+    },
+    {
+      "query_id": 180,
+      "type": "same_bus",
+      "question": "What if stops 20004 and 20007 must ride the same bus?",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20007
+      },
+      "note": "Reuse (20004,20007)"
+    },
+    {
+      "query_id": 181,
+      "type": "same_bus",
+      "question": "What if stops 20001 and 20002 should be served by the same driver?",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20002
+      },
+      "note": "Reuse (20001,20002)"
+    },
+    {
+      "query_id": 182,
+      "type": "same_bus",
+      "question": "The families at 20002 and 20011 requested the same bus",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20011
+      },
+      "note": "Reuse (20002,20011)"
+    },
+    {
+      "query_id": 183,
+      "type": "same_bus",
+      "question": "What if stops 20004 and 20007 should be picked up by the same vehicle?",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20007
+      },
+      "note": "Reuse (20004,20007)"
+    },
+    {
+      "query_id": 184,
+      "type": "same_bus",
+      "question": "Put stops 20001 and 20011 together on one bus",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20011
+      },
+      "note": "Reuse (20001,20011)"
+    },
+    {
+      "query_id": 185,
+      "type": "must_not_assign",
+      "question": "What if stop 20001 must not be served by bus 1?",
+      "entities": {
+        "stop_id": 20001,
+        "bus_id": 1
+      },
+      "note": "Bus 1 not previously used in must_not_assign"
+    },
+    {
+      "query_id": 186,
+      "type": "must_not_assign",
+      "question": "Bus 1 should not be assigned stop 20002",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 1
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 187,
+      "type": "must_not_assign",
+      "question": "What if stop 20004 cannot go on bus 1?",
+      "entities": {
+        "stop_id": 20004,
+        "bus_id": 1
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 188,
+      "type": "must_not_assign",
+      "question": "Keep stop 20006 off bus 1's route",
+      "entities": {
+        "stop_id": 20006,
+        "bus_id": 1
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 189,
+      "type": "must_not_assign",
+      "question": "What if bus 1 is not allowed to pick up stop 20007?",
+      "entities": {
+        "stop_id": 20007,
+        "bus_id": 1
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 190,
+      "type": "must_not_assign",
+      "question": "What if stop 20011 must not be served by bus 1?",
+      "entities": {
+        "stop_id": 20011,
+        "bus_id": 1
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 191,
+      "type": "max_stops",
+      "question": "What if bus 1 can serve at most 3 stops?",
+      "entities": {
+        "bus_id": 1,
+        "max_stops": 3
+      },
+      "note": "Bus 1 not previously used in max_stops"
+    },
+    {
+      "query_id": 192,
+      "type": "max_stops",
+      "question": "Cap bus 1 at 4 pickups maximum",
+      "entities": {
+        "bus_id": 1,
+        "max_stops": 4
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 193,
+      "type": "max_stops",
+      "question": "What if bus 1 is limited to 2 stops only?",
+      "entities": {
+        "bus_id": 1,
+        "max_stops": 2
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 194,
+      "type": "max_stops",
+      "question": "Bus 1 has time constraints \u2014 no more than 5 stops today",
+      "entities": {
+        "bus_id": 1,
+        "max_stops": 5
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 195,
+      "type": "max_stops",
+      "question": "What if bus 1 can make only 1 pickup?",
+      "entities": {
+        "bus_id": 1,
+        "max_stops": 1
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 196,
+      "type": "max_stops",
+      "question": "What if bus 2 can handle at most 5 stops?",
+      "entities": {
+        "bus_id": 2,
+        "max_stops": 5
+      },
+      "note": "New combo: bus 2, max 5"
+    },
+    {
+      "query_id": 197,
+      "type": "capacity",
+      "question": "What if bus 1 can only carry 40 students?",
+      "entities": {
+        "bus_id": 1,
+        "capacity": 40
+      },
+      "note": "Bus 1 not previously used in capacity"
+    },
+    {
+      "query_id": 198,
+      "type": "capacity",
+      "question": "Limit bus 1 to 50 students maximum",
+      "entities": {
+        "bus_id": 1,
+        "capacity": 50
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 199,
+      "type": "capacity",
+      "question": "What if bus 1's capacity is reduced to 30 students?",
+      "entities": {
+        "bus_id": 1,
+        "capacity": 30
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 200,
+      "type": "capacity",
+      "question": "What if bus 1 can carry at most 45 students?",
+      "entities": {
+        "bus_id": 1,
+        "capacity": 45
+      },
+      "note": "Bus 1"
+    },
+    {
+      "query_id": 201,
+      "type": "not_same_bus",
+      "question": "What if stops 20002 and 20006 must not be on the same bus?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20006
+      },
+      "note": "New pair: (20002,20006)"
+    },
+    {
+      "query_id": 202,
+      "type": "not_same_bus",
+      "question": "Separate stops 20004 and 20006 \u2014 they cannot share a vehicle",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20006
+      },
+      "note": "New pair: (20004,20006)"
+    },
+    {
+      "query_id": 203,
+      "type": "not_same_bus",
+      "question": "For safety reasons, stops 20001 and 20011 must travel on different buses",
+      "entities": {
+        "stop_id_1": 20001,
+        "stop_id_2": 20011
+      },
+      "note": "Reuse (20001,20011) with new phrasing"
+    },
+    {
+      "query_id": 204,
+      "type": "not_same_bus",
+      "question": "What if 20006 and 20007 cannot be routed through the same vehicle?",
+      "entities": {
+        "stop_id_1": 20006,
+        "stop_id_2": 20007
+      },
+      "note": "Reuse (20006,20007) with new phrasing"
+    },
+    {
+      "query_id": 205,
+      "type": "ordering",
+      "question": "What if stop 20006 must be picked up before stop 20001?",
+      "entities": {
+        "stop_id_1": 20006,
+        "stop_id_2": 20001
+      },
+      "note": "New directed pair: (20006,20001)"
+    },
+    {
+      "query_id": 206,
+      "type": "ordering",
+      "question": "What if stop 20002 must be served before stop 20006?",
+      "entities": {
+        "stop_id_1": 20002,
+        "stop_id_2": 20006
+      },
+      "note": "New directed pair: (20002,20006)"
+    },
+    {
+      "query_id": 207,
+      "type": "ordering",
+      "question": "Ensure stop 20004 is visited before stop 20006 on the route",
+      "entities": {
+        "stop_id_1": 20004,
+        "stop_id_2": 20006
+      },
+      "note": "New directed pair: (20004,20006)"
+    },
+    {
+      "query_id": 208,
+      "type": "ordering",
+      "question": "What if stop 20011 must come before stop 20006?",
+      "entities": {
+        "stop_id_1": 20011,
+        "stop_id_2": 20006
+      },
+      "note": "New directed pair: (20011,20006)"
+    },
+    {
+      "query_id": 209,
+      "type": "must_assign",
+      "question": "What if stop 20002 must be served by bus 1?",
+      "entities": {
+        "stop_id": 20002,
+        "bus_id": 1
+      },
+      "note": "Bus 1 not previously used in must_assign"
+    },
+    {
+      "query_id": 210,
+      "type": "must_assign",
+      "question": "Assign stop 20007 to bus 1 \u2014 it's on that route",
+      "entities": {
+        "stop_id": 20007,
+        "bus_id": 1
+      },
+      "note": "Bus 1"
+    }
+  ],
+  "max_runtime_retry": 5
+}

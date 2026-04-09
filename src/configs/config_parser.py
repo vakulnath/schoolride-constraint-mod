@@ -117,8 +117,22 @@ def load_config() -> dict:
     hexaly_files = config.get("indexing", "hexaly_files").split(",")
     result["HEXALY_INDEX_FILES"] = [f.strip() for f in hexaly_files]
 
-    # ── API configuration ────────────────────────────────────────────────
-    result["DEFAULT_MODEL"] = config.get("api", "default_model")
+    # ── Model configuration ───────────────────────────────────────────────
+    result["DEFAULT_MODEL"] = config.get("models", "default_model")
+
+    nversion_raw = config.get("models", "nversion_models").split(",")
+    result["NVERSION_MODELS"] = [m.strip() for m in nversion_raw]
+
+    labels_raw = config.get("models", "nversion_labels").split(",")
+    result["NVERSION_LABELS"] = [label.strip() for label in labels_raw]
+
+    fallback_raw = config.get("models", "fallback_chain").split(",")
+    result["FALLBACK_CHAIN"] = {}
+    for pair in fallback_raw:
+        pair = pair.strip()
+        if ":" in pair:
+            src, dst = pair.split(":", 1)
+            result["FALLBACK_CHAIN"][src.strip()] = dst.strip()
 
     # ── External package paths (with env var overrides) ──────────────────
     # SOLVERS configuration
@@ -227,8 +241,11 @@ HEXALY_SOLVER_DIR = _config["HEXALY_SOLVER_DIR"]
 INSERTION_TEMP_CODE_DIR = _config["INSERTION_TEMP_CODE_DIR"]
 HEXALY_TEMP_CODE_DIR = _config["HEXALY_TEMP_CODE_DIR"]
 
-# API configuration
+# Model configuration
 DEFAULT_MODEL = _config["DEFAULT_MODEL"]
+NVERSION_MODELS = _config["NVERSION_MODELS"]
+NVERSION_LABELS = _config["NVERSION_LABELS"]
+FALLBACK_CHAIN = _config["FALLBACK_CHAIN"]
 
 # External package paths
 SOLVERS_ROOT = _config["SOLVERS_ROOT"]

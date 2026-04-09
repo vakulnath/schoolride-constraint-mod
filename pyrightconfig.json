@@ -1,0 +1,9 @@
+{
+  "venvPath": "/Users/vakulnath/constraint-solver/constraint_modification",
+  "venv": ".venv",
+  "pythonVersion": "3.13",
+  "pythonPlatform": "Darwin",
+  "reportMissingImports": "warning",
+  "reportMissingModuleSource": "none",
+  "extraPaths": ["src"]
+}

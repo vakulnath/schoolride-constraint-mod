@@ -46,3 +46,4 @@ These are penalties, not hard rejections.
 - O4 Riding time: penalty for students riding longer than the limit
   (default 75 minutes). Only penalizes excess over the limit, not total
   riding time. Weight: riding_time_weight (default 100.0).
+

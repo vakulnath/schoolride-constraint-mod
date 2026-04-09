@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: constraint-modification
+Version: 0.1.0
+Summary: LLM-powered constraint modification system for school bus routing
+Requires-Python: >=3.10
+Requires-Dist: school-solvers @ file:///Users/vakulnath/constraint-solver/constraint_modification/schoolride-solvers
+Requires-Dist: school-simulator @ file:///Users/vakulnath/constraint-solver/constraint_modification/schoolride-simulator
+Requires-Dist: hexaly>=14.5
+Requires-Dist: python-dotenv
+Requires-Dist: dotenv>=0.9.9
+Requires-Dist: google-adk>=1.27.2
+Requires-Dist: nest-asyncio>=1.6.0

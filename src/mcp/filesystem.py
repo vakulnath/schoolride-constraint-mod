@@ -8,7 +8,7 @@ Wraps the @modelcontextprotocol/server-filesystem MCP server
 import os
 from typing import Any, Dict, List, Optional
 
-from src.clients.mcp_client import MCPClient, get_filesystem_client, extract_text
+from src.mcp.context import MCPClient, get_filesystem_client, extract_text
 
 
 def _get_fs_client(allowed_dirs: List[str], env: Optional[Dict[str, str]] = None) -> MCPClient:

@@ -1,81 +1,82 @@
 """
-Revision Agent (RA) — corrects edits based on JA or EAA feedback.
+Revision Agent (RA) — corrects a rejected or failed edit based on feedback.
 
-Has the same tools as the Generation Agent (search_code, read_function,
-apply_edit).  The key difference is the enriched prompt that includes the
-previous diff and structured feedback so the model doesn't repeat the same
-mistake.
+Has tools (search_code, read_function, find_symbol, get_callers, get_call_details)
+so it can search for alternative injection points if the feedback suggests the
+original approach was wrong.
+
+Called after:
+  - JA rejects the GA's edit (feedback_source="judgment")
+  - EAA diagnoses a runtime error (feedback_source="error_analysis")
+  - Schedule diff detects a constraint violation (feedback_source="constraint_violation")
 """
 
-from typing import Any, Dict, Optional
+from __future__ import annotations
 
-from core.api_agent import run_api_agent
+from typing import List
+
+from google.adk import Agent
+from google.genai.types import GenerateContentConfig
+
+_LLM_CONFIG = GenerateContentConfig(temperature=0)
+
+_INSTRUCTION = """\
+You generate corrected code edits based on feedback from a reviewer or error diagnosis.
+
+You will receive:
+  - The original constraint to implement
+  - The previous edit diff that was rejected or failed
+  - Structured feedback explaining what went wrong
+
+Your job:
+1. Read the feedback carefully — understand exactly what was wrong.
+2. Do NOT repeat the same mistake. If the feedback says wrong variable, wrong
+   function, or wrong approach — use your tools to find the right one.
+3. Use search_code, read_function, get_callers to verify your fix before outputting.
+4. Output the corrected edit using XML tags:
+   <relative_path>file.py</relative_path>
+   <old_text>exact lines to replace</old_text>
+   <new_text>replacement with fix applied</new_text>
+   <explanation>what was changed and why this addresses the feedback</explanation>
+
+Rules:
+- old_text must be EXACT verbatim lines from the CURRENT file (it may differ from the
+  original if a previous edit was already applied)
+- Follow api_examples patterns from the feedback context
+- Use .get() for dict access
+- Hardcode constraint values directly
+
+You have tools: search_code, read_function, find_symbol, get_callers, get_call_details.
+Use them if the feedback suggests a different function or approach is needed.
+
+{constraints}
+{schema}
+"""
 
 
-def run_revision_agent(
-    constraint: str,
-    feedback: str,
-    feedback_source: str,
-    previous_diff: str,
-    context_root: str,
-    env: Dict[str, str],
-    logs_dir: Optional[str] = None,
-    temp_code_dir: Optional[str] = None,
-    max_turns: int = 10,
-    solver_type: str = "insertion",
-) -> Dict[str, Any]:
-    """Run the Revision Agent with enriched context.
+def create_revision_agent(
+    model,
+    tools: List,
+    constraint_content: str,
+    schema_content: str,
+) -> Agent:
+    """Create the Revision Agent (RA).
 
-    Parameters
-    ----------
-    feedback_source : str
-        ``"judgment"`` when the JA rejected the edit, or
-        ``"error_analysis"`` when the EAA diagnosed a runtime failure.
-    previous_diff : str
-        Unified diff of the edit that was rejected / failed.
-    feedback : str
-        Full text from the JA or EAA.
-
-    Returns the same shape as ``run_api_agent``.
+    Args:
+        model: ADK model identifier or LiteLlm instance.
+        tools: List of callable tool functions (same tools as Main Agent).
+        constraint_content: Contents of constraints.txt for the solver.
+        schema_content: JSON schema describing the solver API.
     """
-    if feedback_source == "judgment":
-        enriched = (
-            f"{constraint}\n\n"
-            f"IMPORTANT — A previous edit was REJECTED by the review agent.\n\n"
-            f"Previous edit diff:\n```diff\n{previous_diff}\n```\n\n"
-            f"Review feedback:\n{feedback}\n\n"
-            f"Apply a CORRECTED edit that addresses every issue listed above.\n"
-            f"Do NOT repeat the same mistake."
-        )
-    elif feedback_source == "error_analysis":
-        enriched = (
-            f"{constraint}\n\n"
-            f"IMPORTANT — A previous edit caused a RUNTIME ERROR.\n\n"
-            f"Previous edit diff:\n```diff\n{previous_diff}\n```\n\n"
-            f"Error diagnosis:\n{feedback}\n\n"
-            f"Apply a CORRECTED edit that avoids this error.\n"
-            f"If the diagnosis suggests a different function or approach, follow it."
-        )
-    elif feedback_source == "constraint_violation":
-        enriched = (
-            f"{constraint}\n\n"
-            f"IMPORTANT — A previous edit PASSED the runtime test but FAILED "
-            f"constraint verification in the output schedule.\n\n"
-            f"Previous edit diff:\n```diff\n{previous_diff}\n```\n\n"
-            f"Constraint violation analysis:\n{feedback}\n\n"
-            f"Apply a CORRECTED edit that ensures the constraint is properly enforced.\n"
-            f"The code ran without errors, but the resulting schedule did not satisfy "
-            f"the constraint. The edit may need a stronger enforcement mechanism."
-        )
-    else:
-        enriched = constraint
-
-    return run_api_agent(
-        constraint=enriched,
-        context_root=context_root,
-        env=env,
-        logs_dir=logs_dir,
-        temp_code_dir=temp_code_dir,
-        max_turns=max_turns,
-        solver_type=solver_type,
+    instruction = _INSTRUCTION.format(
+        constraints=f"<constraints>\n{constraint_content}\n</constraints>",
+        schema=f"<schema>\n{schema_content}\n</schema>",
+    )
+    return Agent(
+        name="ra",
+        model=model,
+        description="Corrects rejected or failed edits based on reviewer feedback.",
+        instruction=instruction,
+        tools=tools,
+        generate_content_config=_LLM_CONFIG,
     )

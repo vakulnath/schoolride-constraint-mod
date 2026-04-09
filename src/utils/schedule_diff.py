@@ -93,7 +93,7 @@ def _bus_stop_count(schedule: List[Dict]) -> Dict[int, int]:
     return counts
 
 
-def _get_stop_indices_on_bus(schedule: List[Dict], bus_id: int) -> Dict[int, int]:
+def _get_stop_indices_on_bus(schedule: List[Dict], bus_id: Any) -> Dict[int, int]:
     """Get {stop_id: index} for all stops on a given bus (across all workloads)."""
     indices: Dict[int, int] = {}
     idx = 0

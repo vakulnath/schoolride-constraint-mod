@@ -1,85 +1,91 @@
 """
-Error Analysis Agent (EAA) — diagnoses runtime errors after toy-test failure.
+Error Analysis Agent (EAA) — diagnoses test failures and produces a corrected edit.
 
-Tool-free, single-turn API call.  Takes the constraint, the diff that was
-applied, and the traceback, and returns a structured diagnosis that the
-Revision Agent can act on.
+Has tools (search_code, read_function, find_symbol, find_referencing_symbols)
+so it can actively search for the function that controls the failure mode, not just
+the function that was originally edited.
+
+The EAA reads the test error, identifies the root cause, finds the controlling
+function via tool calls, and outputs an XML-formatted corrected edit.
 """
 
-from typing import Any, Dict, Optional
+from __future__ import annotations
 
-from core.api_agent import api_single_turn
+from typing import List
 
+from google.adk import Agent
+from google.genai.types import GenerateContentConfig
 
-_EAA_SYSTEM_PROMPT = """\
-You are a Python debugging expert specialising in school-bus routing
-policy code.
+_LLM_CONFIG = GenerateContentConfig(temperature=0)
 
-Given:
-  • The routing constraint that was being implemented.
-  • The code edit (unified diff) that was applied.
-  • The runtime error / traceback produced by the test harness.
+_INSTRUCTION = """\
+A constraint modification was applied but the toy test failed. Your job:
 
-Your task:
+1. Read the error to understand the FAILURE MODE (not the constraint).
+   Example: 'stops on different buses' → the ASSIGNMENT LOOP put them on different buses.
+   Example: 'wrong order' → the ASSIGNMENT LOOP inserted them independently.
+   Example: 'capacity exceeded' → the LOAD CHECK threshold is wrong.
 
-1) ROOT CAUSE   — Identify the exact cause of the failure (wrong variable
-                  name, wrong scope, missing import, off-by-one, violated
-                  invariant, etc.).
-2) EXPLANATION  — In 2-3 sentences, explain *why* the edit caused this
-                  error.
-3) FIX STRATEGY — Give a specific, actionable suggestion.  Should the fix
-                  be in the same function?  A different function?  A
-                  different approach entirely?
+2. CRITICAL: Find the function that CONTROLS the failure mode — the one that
+   makes the DECISION, not the one that scores or evaluates a single option.
+   - If the error is about WHICH bus a stop lands on → find the function with the
+     loop that iterates over stops and builds the CANDIDATE LIST of buses.
+     Filtering the candidate list BEFORE evaluation is the right fix.
+   - Do NOT edit a leaf scoring/evaluation function. The fix belongs in the
+     CALLER that assembles candidates or assigns stops in a loop.
+   - Use find_referencing_symbols to trace from the evaluation function UP to the loop.
 
-Be precise: reference exact variable names, function names, and — where
-possible — line numbers from the traceback.  Focus on the MOST LIKELY
-single root cause; do not enumerate every theoretical possibility.
+3. Read the controlling function. Look for where candidate lists are built,
+   where stops are iterated, and where assignment decisions are made.
+
+4. Output an edit that fixes the failure mode:
+   <relative_path>file.py</relative_path>
+   <old_text>exact lines from the file</old_text>
+   <new_text>corrected lines</new_text>
+   <explanation>why this fixes the failure mode</explanation>
+
+IMPORTANT: If the error says items are on DIFFERENT groups when they should be
+on the SAME group, the fix must go in the function that DECIDES which group
+each item is assigned to — the main assignment loop that builds candidate lists.
+Do NOT fix this in scoring, evaluation, or constraint-checking functions.
+Use find_referencing_symbols to trace UP to the assignment loop and filter the
+candidate list so the second item can only be assigned to the group containing the first.
+Copy variable names EXACTLY from the source — do not guess or pluralize.
+
+You have tools: search_code, read_function, find_symbol, find_referencing_symbols.
+Use them to find the code responsible for the failure.
+
+{constraints}
+{schema}
 """
 
 
-def run_error_analysis_agent(
-    constraint: str,
-    diff: str,
-    traceback_text: str,
-    env: Dict[str, str],
-    logs_dir: Optional[str] = None,
-) -> Dict[str, Any]:
-    """Diagnose a toy-test failure.
+def create_error_analysis_agent(
+    model,
+    tools: List,
+    constraint_content: str,
+    schema_content: str,
+    static_instruction: str = "",
+) -> Agent:
+    """Create the Error Analysis Agent (EAA).
 
-    Returns::
-
-        {
-            "diagnosis": str,         # full EAA response text
-            "cost_usd": float,
-            "input_tokens": int,
-            "output_tokens": int,
-        }
+    Args:
+        model: ADK model identifier or LiteLlm instance.
+        tools: List of callable tool functions (same tools as Main Agent).
+        constraint_content: Contents of constraints.txt for the solver.
+        schema_content: JSON schema describing the solver API.
+        static_instruction: Optional stable context to cache (e.g. function sources).
     """
-    # Keep traceback to a reasonable size to avoid blowing token limits.
-    traceback_trimmed = traceback_text[-3000:] if len(traceback_text) > 3000 else traceback_text
-
-    user_prompt = (
-        "## Constraint being implemented\n"
-        f"{constraint}\n\n"
-        "## Edit that was applied\n"
-        f"```diff\n{diff}\n```\n\n"
-        "## Runtime error / traceback\n"
-        f"```\n{traceback_trimmed}\n```\n\n"
-        "Diagnose the root cause and suggest a concrete fix."
+    instruction = _INSTRUCTION.format(
+        constraints=f"<constraints>\n{constraint_content}\n</constraints>",
+        schema=f"<schema>\n{schema_content}\n</schema>",
     )
-
-    result = api_single_turn(
-        user_prompt=user_prompt,
-        system_prompt=_EAA_SYSTEM_PROMPT,
-        env=env,
-        logs_dir=logs_dir,
-        log_prefix="error_analysis_agent",
-        max_tokens=2048,
+    return Agent(
+        name="eaa",
+        model=model,
+        description="Diagnoses test failures by searching for the code that caused the failure.",
+        static_instruction=static_instruction or None,
+        instruction=instruction,
+        tools=tools,
+        generate_content_config=_LLM_CONFIG,
     )
-
-    return {
-        "diagnosis": (result.get("text") or "").strip(),
-        "cost_usd": result.get("cost_usd", 0),
-        "input_tokens": result.get("input_tokens", 0),
-        "output_tokens": result.get("output_tokens", 0),
-    }
